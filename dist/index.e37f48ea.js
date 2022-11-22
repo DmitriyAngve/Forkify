@@ -538,11 +538,9 @@ var _webImmediateJs = require("core-js/modules/web.immediate.js");
 var _modelJs = require("./model.js"); // "*" - all
 var _recipeViewJs = require("./views/recipeView.js");
 var _recipeViewJsDefault = parcelHelpers.interopDefault(_recipeViewJs);
+var _searchViewJs = require("./views/searchView.js");
+var _searchViewJsDefault = parcelHelpers.interopDefault(_searchViewJs);
 var _runtime = require("regenerator-runtime/runtime"); // for polyfiling async await
-const recipeContainer = document.querySelector(".recipe");
-// console.log(recipeContainer);
-// https://forkify-api.herokuapp.com/v2
-///////////////////////////////////////
 const controlRecipes = async function() {
     try {
         const id = window.location.hash.slice(1); // change the hash id with slice 2 first element
@@ -556,16 +554,30 @@ const controlRecipes = async function() {
         // 2) Rendering recipe
         (0, _recipeViewJsDefault.default).render(_modelJs.state.recipe);
     } catch (err) {
+        (0, _recipeViewJsDefault.default).renderError();
+    }
+};
+const controlSearchResults = async function() {
+    try {
+        // 1) Get search query
+        const query = (0, _searchViewJsDefault.default).getQuery();
+        if (!query) return;
+        // 2) Load search results
+        await _modelJs.loadSearchResults(query);
+        // 3) Render results
+        console.log(_modelJs.state.search.results);
+    } catch (err) {
         console.log(err);
     }
 };
-// And function and data flow. As we start to programm then the init() runs and it will then immediately run addHandlerRender. AddHandlerRender listening for events in the "recipeView.js". As we call addHandlerRender we pass in the controller function (controlRecipes) / handler function that we want to get executed as soon as the event happens. Thenreceive that function as being called handler and so that's what we then call as soon as the event happens
+// And function and data flow. As we start to programm then the init() runs and it will then immediately run addHandlerRender. AddHandlerRender listening for events in the "recipeView.js". As we call addHandlerRender we pass in the controller function (controlRecipes) / handler function that we want to get executed as soon as the event happens. Then receive that function as being called handler and so that's what we then call as soon as the event happens
 const init = function() {
     (0, _recipeViewJsDefault.default).addHandlerRender(controlRecipes);
+    (0, _searchViewJsDefault.default).addHandlerSearch(controlSearchResults);
 };
 init();
 
-},{"core-js/modules/es.regexp.flags.js":"gSXXb","core-js/modules/web.immediate.js":"49tUX","regenerator-runtime/runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./model.js":"Y4A21","./views/recipeView.js":"l60JC"}],"gSXXb":[function(require,module,exports) {
+},{"core-js/modules/es.regexp.flags.js":"gSXXb","core-js/modules/web.immediate.js":"49tUX","regenerator-runtime/runtime":"dXNgZ","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./model.js":"Y4A21","./views/recipeView.js":"l60JC","./views/searchView.js":"9OQAM"}],"gSXXb":[function(require,module,exports) {
 var global = require("../internals/global");
 var DESCRIPTORS = require("../internals/descriptors");
 var defineBuiltInAccessor = require("../internals/define-built-in-accessor");
@@ -2390,11 +2402,17 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "state", ()=>state);
 parcelHelpers.export(exports, "loadRecipe", ()=>loadRecipe);
+parcelHelpers.export(exports, "loadSearchResults", ()=>loadSearchResults);
 var _regeneratorRuntime = require("regenerator-runtime");
 var _configJs = require("./config.js");
 var _helpersJs = require("./helpers.js");
 const state = {
-    recipe: {}
+    recipe: {},
+    // May be for analytics, store it in state
+    search: {
+        query: "",
+        results: []
+    }
 };
 const loadRecipe = async function(id) {
     try {
@@ -2414,10 +2432,30 @@ const loadRecipe = async function(id) {
     } catch (err) {
         // Temp error handling
         console.error(`${err} 💥💥💥💥`);
+        throw err; // We will then have access to exact same error object, as we have in code above ("console.error(`${err} 💥💥💥💥`)")
+    }
+};
+const loadSearchResults = async function(query) {
+    try {
+        state.search.query = query;
+        const data = await (0, _helpersJs.getJSON)(`${(0, _configJs.API_URL)}?search=${query}`);
+        console.log(data);
+        // Stor this data ("data.data.s...")
+        state.search.results = data.data.recipes.map((rec)=>{
+            return {
+                id: rec.id,
+                title: rec.title,
+                publisher: rec.publisher,
+                image: rec.image_url
+            };
+        });
+    } catch (err) {
+        console.error(`${err} 💥💥💥💥`);
+        throw err;
     }
 };
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./config.js":"k5Hzs","./helpers.js":"hGI1E","regenerator-runtime":"dXNgZ"}],"k5Hzs":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","regenerator-runtime":"dXNgZ","./config.js":"k5Hzs","./helpers.js":"hGI1E"}],"k5Hzs":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "API_URL", ()=>API_URL);
@@ -2454,7 +2492,7 @@ const getJSON = async function(url) {
     }
 };
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./config.js":"k5Hzs","regenerator-runtime":"dXNgZ"}],"l60JC":[function(require,module,exports) {
+},{"regenerator-runtime":"dXNgZ","./config.js":"k5Hzs","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"l60JC":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _iconsSvg = require("url:../../img/icons.svg"); // Parcel 2
@@ -2463,6 +2501,8 @@ var _fractional = require("fractional");
 class RecipeView {
     #parentElement = document.querySelector(".recipe");
     #data;
+    #errorMessage = "We could not find that recipe. Please try another one!";
+    #message = "";
     // Method render() does return HTML string
     render(data) {
         this.#data = data; // render method took data(recipe) from "recipeView.render(model.state.recipe);" and stores it in that data
@@ -2484,12 +2524,26 @@ class RecipeView {
         this.#clear; // Clear the parent element
         this.#parentElement.insertAdjacentHTML("afterbegin", markup);
     }
-    renderError(message) {
+    renderError(message = this.#errorMessage) {
         const markup = `
     <div class="error">
         <div>
             <svg>
                 <use href="${(0, _iconsSvgDefault.default)}#icon-alert-triangle"></use>
+              </svg>
+            </div>
+        <p>${message}</p>
+    </div>
+    `;
+        this.#clear; // Clear the parent element
+        this.#parentElement.insertAdjacentHTML("afterbegin", markup);
+    }
+    renderMessage(message = this.#message) {
+        const markup = `
+    <div class="message">
+        <div>
+            <svg>
+                <use href="${(0, _iconsSvgDefault.default)}#icon-smile"></use>
               </svg>
             </div>
         <p>${message}</p>
@@ -2884,6 +2938,30 @@ Fraction.primeFactors = function(n) {
 };
 module.exports.Fraction = Fraction;
 
-},{}]},["fA0o9","aenu9"], "aenu9", "parcelRequire3a11")
+},{}],"9OQAM":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+class SearchView {
+    #parentEl = document.querySelector(".search");
+    // query (search and input field)
+    getQuery() {
+        const query = this.#parentEl.querySelector(".search__field").value;
+        this.#clearInput();
+        return query;
+    }
+    #clearInput() {
+        this.#parentEl.querySelector(".search__field").value = "";
+    }
+    // Event listener for click "Enter" button or search
+    addHandlerSearch(handler) {
+        this.#parentEl.addEventListener("submit", function(e) {
+            e.preventDefault();
+            handler(); // this handler function should be the control searchResult function
+        });
+    }
+}
+exports.default = new SearchView();
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["fA0o9","aenu9"], "aenu9", "parcelRequire3a11")
 
 //# sourceMappingURL=index.e37f48ea.js.map

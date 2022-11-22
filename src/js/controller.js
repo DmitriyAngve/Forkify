@@ -1,15 +1,9 @@
 import * as model from './model.js'; // "*" - all
 import recipeView from './views/recipeView.js';
+import searchView from './views/searchView.js';
 
 import 'core-js/stable'; // for polyfiling everything else
 import 'regenerator-runtime/runtime'; // for polyfiling async await
-
-const recipeContainer = document.querySelector('.recipe');
-// console.log(recipeContainer);
-
-// https://forkify-api.herokuapp.com/v2
-
-///////////////////////////////////////
 
 const controlRecipes = async function () {
   try {
@@ -27,12 +21,29 @@ const controlRecipes = async function () {
     // 2) Rendering recipe
     recipeView.render(model.state.recipe);
   } catch (err) {
+    recipeView.renderError();
+  }
+};
+
+const controlSearchResults = async function () {
+  try {
+    // 1) Get search query
+    const query = searchView.getQuery();
+    if (!query) return;
+
+    // 2) Load search results
+    await model.loadSearchResults(query);
+
+    // 3) Render results
+    console.log(model.state.search.results);
+  } catch (err) {
     console.log(err);
   }
 };
 
-// And function and data flow. As we start to programm then the init() runs and it will then immediately run addHandlerRender. AddHandlerRender listening for events in the "recipeView.js". As we call addHandlerRender we pass in the controller function (controlRecipes) / handler function that we want to get executed as soon as the event happens. Thenreceive that function as being called handler and so that's what we then call as soon as the event happens
+// And function and data flow. As we start to programm then the init() runs and it will then immediately run addHandlerRender. AddHandlerRender listening for events in the "recipeView.js". As we call addHandlerRender we pass in the controller function (controlRecipes) / handler function that we want to get executed as soon as the event happens. Then receive that function as being called handler and so that's what we then call as soon as the event happens
 const init = function () {
   recipeView.addHandlerRender(controlRecipes);
+  searchView.addHandlerSearch(controlSearchResults);
 };
 init();
