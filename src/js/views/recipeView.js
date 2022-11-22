@@ -17,7 +17,7 @@ class RecipeView {
     this.#parentElement.innerHTML = ''; // remove message "Start by seacrching for a this.#data..."
   }
 
-  renderSpinner = function () {
+  renderSpinner() {
     const markup = `
     <div class="spinner">
       <svg>
@@ -25,11 +25,24 @@ class RecipeView {
       </svg>
     </div>
     `;
-    this.#parentElement.innerHTML = ''; // Clear the parent element
+    this.#clear; // Clear the parent element
     this.#parentElement.insertAdjacentHTML('afterbegin', markup);
-  };
+  }
 
-  renderError;
+  renderError(message) {
+    const markup = `
+    <div class="error">
+        <div>
+            <svg>
+                <use href="${icons}#icon-alert-triangle"></use>
+              </svg>
+            </div>
+        <p>${message}</p>
+    </div>
+    `;
+    this.#clear; // Clear the parent element
+    this.#parentElement.insertAdjacentHTML('afterbegin', markup);
+  }
 
   addHandlerRender(handler) {
     ['hashchange', 'load'].forEach(ev => window.addEventListener(ev, handler));
@@ -137,4 +150,4 @@ class RecipeView {
   }
 }
 
-export default new RecipeView(); // create new object based on class here and export him into t
+export default new RecipeView(); // create new object based on class here and export him into the controller.js
